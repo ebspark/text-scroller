@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nice little text wheel scroll with smooth scrolling, customizable text.">
+    <meta name="keywords" content="interactive text picker, time picker, picker, wheel, text wheel, combination wheel,  JavaScript, CSS, smooth scroll, UI, responsive design, ebspark, eb spark, eb, spark">
+    <meta name="author" content="EB Spark">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ebspark.github.io/">
+    <meta property="og:title" content="Text Wheel Scroller">
+    <meta property="og:image" content="https://ebspark.github.io/favicon.png">
+
+    <style>
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .text-picker {
+            width: 240px;
+            position: relative;
+            height: 280px;
+            overflow: hidden;
+            border-radius: 12px;
+            perspective: 1000px;
+        }
+
+        .text-list {
+            height: 100%;
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 50px 0;
+            box-sizing: border-box;
+            background: #000;
+            transform-style: preserve-3d;
+            scroll-behavior: smooth;
+            position: relative;
+            z-index: 0;
+        }
+
+        .text-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        .text-option {
+            margin: 16px 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+            font-weight: 400;
+            transform-origin: center center;
+            position: relative;
+            height: 36px;
+            line-height: 36px;
+            transform: scale(0.7);
+            will-change: transform, color, font-size;
+            text-overflow: ellipsis;
+            padding: 0 20px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .text-option.far {
+            color: rgba(255, 255, 255, 0.116);
+            font-size: 16px;
+            transform: scale(0.8);
+        }
+
+        .text-option.super-far {
+            color: rgba(255, 255, 255, 0.095);
+            font-size: 14px;
+            transform: scale(0.8);
+        }
+
+        .text-option.near {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 22px;
+            transform: scale(0.85) 
+        }
+
+        .text-option.nearer {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 28px;
+            text-shadow: 0 2px 8px rgba(255,255,255,0.1);
+            transform: scale(0.95);
+        }
+
+        .text-option.selected {
+            color: rgba(255, 255, 255, 1);
+            font-size: 32px;
+            font-weight: 500;
+            transform: scale(1);
+            text-shadow: 0 4px 12px rgba(255,255,255,0.2);
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .input-area {
+            width: 240px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+            height: 280px;
+            resize: none;
+        }
+
+        .input-area:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .input-area::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+        <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-58NL2S9M');</script>
+</head>
+</head>
+<body>
+    <div class="container">
+        <textarea class="input-area" placeholder="Some text here...">Hello
+World</textarea>
+        <div class="text-picker">
+            <div class="text-list"></div>
+        </div>
+    </div>
+    <script>
+        class Picker {
+            constructor() {
+                this.list = document.querySelector('.text-list');
+                this.textarea = document.querySelector('.input-area');
+                this.selectedIndex = 0;
+                this.isScrolling = false;
+                this.lastScrollTime = 0;
+                this.scrollTimeout = null;
+                this.setPadding();
+                this.buildOptions();
+                this.scrollToSelected();
+                this.addListeners();
+            }
+
+            setPadding() {
+                const pickerHeight = document.querySelector('.text-picker').clientHeight;
+                const padding = pickerHeight / 2;
+                this.list.style.paddingTop = `${padding}px`;
+                this.list.style.paddingBottom = `${padding}px`;
+            }
+
+            buildOptions() {
+                this.list.innerHTML = '';
+                const options = this.textarea.value.split('\n').filter(line => line.trim() !== '');
+                options.forEach((optionText, index) => {
+                    const option = document.createElement('div');
+                    option.className = 'text-option';
+                    option.textContent = optionText;
+                    option.dataset.index = index;
+                    this.list.appendChild(option);
+                });
+
+                if (this.selectedIndex >= options.length) {
+                    this.selectedIndex = Math.max(0, options.length - 1);
+                }
+                this.updateSelection();
+            }
+
+            addListeners() {
+                let rafId;
+                
+                this.list.addEventListener('scroll', () => {
+                    this.lastScrollTime = Date.now();
+                    
+                    if (rafId) {
+                        cancelAnimationFrame(rafId);
+                    }
+                    
+                    rafId = requestAnimationFrame(() => {
+                        this.updateSelection();
+                        rafId = null;
+                    });
+
+                    clearTimeout(this.scrollTimeout);
+                    this.scrollTimeout = setTimeout(() => {
+                        if (Date.now() - this.lastScrollTime >= 150) {
+                            this.snapToClosest();
+                        }
+                    }, 150);
+                });
+
+                this.list.addEventListener('touchstart', () => {
+                    this.isScrolling = true;
+                });
+
+                this.list.addEventListener('touchend', () => {
+                    this.isScrolling = false;
+                    setTimeout(() => {
+                        if (!this.isScrolling) {
+                            this.snapToClosest();
+                        }
+                    }, 150);
+                });
+
+                this.list.addEventListener('click', (e) => {
+                    const option = e.target.closest('.text-option');
+                    if (option) {
+                        this.selectedIndex = parseInt(option.dataset.index);
+                        this.scrollToSelected();
+                    }
+                });
+
+                this.textarea.addEventListener('input', () => {
+                    this.buildOptions();
+                    this.scrollToSelected();
+                });
+
+                window.addEventListener('resize', () => this.setPadding());
+            }
+
+            scrollToSelected() {
+                const selectedOption = this.list.children[this.selectedIndex];
+                if (selectedOption) {
+                    const targetScroll = selectedOption.offsetTop - (this.list.clientHeight - selectedOption.clientHeight) / 2;
+                    this.smoothScrollTo(targetScroll);
+                }
+            }
+
+            updateSelection() {
+                const center = this.list.getBoundingClientRect().top + this.list.clientHeight / 2;
+                Array.from(this.list.children).forEach(option => {
+                    const rect = option.getBoundingClientRect();
+                    const distance = Math.abs(rect.top + rect.height / 2 - center);
+
+                    option.className = 'text-option';
+                    if (distance < 10) {
+                        option.classList.add('selected');
+                        this.selectedIndex = parseInt(option.dataset.index);
+                    } else if (distance < 40) {
+                        option.classList.add('nearer');
+                    } else if (distance < 90) {
+                        option.classList.add('near');
+                    } else if (distance < 120) {
+                        option.classList.add('far');
+                    } else {
+                        option.classList.add('super-far');
+                    }
+                });
+            }
+
+            snapToClosest() {
+                if (this.isScrolling) return;
+                
+                const options = Array.from(this.list.children);
+                const listRect = this.list.getBoundingClientRect();
+                const center = listRect.top + listRect.height / 2;
+
+                let closestOption = null;
+                let minDistance = Infinity;
+
+                options.forEach(option => {
+                    const rect = option.getBoundingClientRect();
+                    const distance = Math.abs(rect.top + rect.height / 2 - center);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestOption = option;
+                    }
+                });
+
+                if (closestOption) {
+                    this.selectedIndex = parseInt(closestOption.dataset.index);
+                    const targetScroll = closestOption.offsetTop - (this.list.clientHeight - closestOption.clientHeight) / 2;
+                    this.smoothScrollTo(targetScroll);
+                }
+            }
+
+            smoothScrollTo(targetScroll) {
+                this.isScrolling = true;
+                const startScroll = this.list.scrollTop;
+                const distance = targetScroll - startScroll;
+                const duration = 400;
+                const startTime = performance.now();
+
+                const animate = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    const eased = this.easeInOutCubic(progress);
+                    this.list.scrollTop = startScroll + distance * eased;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        this.isScrolling = false;
+                        this.updateSelection();
+                    }
+                };
+
+                requestAnimationFrame(animate);
+            }
+
+            easeInOutCubic(t) {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }
+        }
+
+        new Picker();
+    </script>
+</body>
+</html>
