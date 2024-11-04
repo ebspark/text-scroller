@@ -129,6 +129,26 @@
         .input-area::placeholder {
             color: rgba(255, 255, 255, 0.5);
         }
+
+        #github-btn{
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            border-radius: 100%;
+            background-color: #7d7d7d20;
+            background-image: url('code-link.svg');
+            background-size: 50%;
+            background-position: center; 
+            background-repeat: no-repeat;
+            opacity: 0.6;
+            transition: background-color, opacity .3s ease-in-out;
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+        #github-btn:hover{
+                background-color: #7d7d7d4d;
+                opacity: 2.0;
+            }
     </style>
         <script>(function (w, d, s, l, i) {
             w[l] = w[l] || []; w[l].push({
@@ -148,6 +168,7 @@ World</textarea>
             <div class="text-list"></div>
         </div>
     </div>
+    <a id="github-btn" target="_blank" href="https://github.com/ebspark/text-scroller/blob/main/text-scroller.html" title="Source Code"><div></div></a>
     <script>
         class Picker {
             constructor() {
